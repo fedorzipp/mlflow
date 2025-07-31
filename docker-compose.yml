@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  mlflow:
+    image: python:3.10
+    ports:
+      - "7001:7001"
+    volumes:
+      - ./mlruns:/mlruns
+    command: >
+      bash -c "pip install mlflow && mlflow ui --backend-store-uri /mlruns --host 0.0.0.0 --port 7001"
+
+  uploader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python upload_dataset.py
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+    volumes:
+      - ./data:/data
+
+  trainer:
+    build:
+      context: .
+      dockerfile: Dockerfile # ✅ now inside build
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - MLFLOW_TRACKING_URI=http://localhost:7001
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - S3_DATA_KEY=train.csv
+    depends_on:
+      - mlflow
+      - uploader
