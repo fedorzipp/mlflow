@@ -20,4 +20,4 @@
    ```
    docker compose up --build
    ```
-4. Відкрий MLflow UI: http://localhost:5000
+4. Відкрий MLflow UI: http://localhost:7001
